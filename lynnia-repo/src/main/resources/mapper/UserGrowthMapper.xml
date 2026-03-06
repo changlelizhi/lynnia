@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="space.changle.lynnia.repo.mapper.UserGrowthMapper">
+
+    <resultMap id="UserGrowthResultMap" type="space.changle.lynnia.repo.entity.UserGrowth">
+        <id property="userId" column="user_id"/>
+        <result property="reputation" column="reputation"/>
+        <result property="totalCheckinDays" column="total_checkin_days"/>
+        <result property="streakDays" column="streak_days"/>
+        <result property="lastCheckinDate" column="last_checkin_date"/>
+        <result property="plusCount" column="plus_count"/>
+        <result property="minusCount" column="minus_count"/>
+        <result property="taskCount" column="task_count"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        user_id,
+        reputation,
+        total_checkin_days,
+        streak_days,
+        last_checkin_date,
+        plus_count,
+        minus_count,
+        task_count,
+        update_time
+    </sql>
+
+    <select id="selectByUserId" resultMap="UserGrowthResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_user_growth
+        WHERE user_id = #{userId}
+    </select>
+
+    <insert id="insertGrowth" parameterType="space.changle.lynnia.repo.entity.UserGrowth">
+        INSERT INTO t_user_growth (user_id,
+                                   reputation,
+                                   total_checkin_days,
+                                   streak_days,
+                                   last_checkin_date,
+                                   plus_count,
+                                   minus_count,
+                                   task_count,
+                                   update_time)
+        VALUES (#{userId},
+                #{reputation},
+                #{totalCheckinDays},
+                #{streakDays},
+                #{lastCheckinDate},
+                #{plusCount},
+                #{minusCount},
+                #{taskCount},
+                #{updateTime})
+    </insert>
+
+</mapper>

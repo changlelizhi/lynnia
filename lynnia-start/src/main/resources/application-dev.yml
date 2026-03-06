@@ -1,0 +1,62 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432//dev_db?sslmode=disable&stringtype=unspecified&connectTimeout=30&socketTimeout=30&tcpKeepAlive=true
+    username: dev
+    password: dev pass
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 20
+      connection-timeout: 5000
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      leak-detection-threshold: 120000
+      validation-timeout: 5000
+
+  data:
+    redis:
+      host:
+      port: 6379
+      password:
+      timeout: 5000
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-date-keys-as-timestamps:  false
+      write-durations-as-timestamps:  false
+      indent-output:  true
+
+    mapper:
+      use-static-typing: false
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: space.changLe.lynnia.repo.entity
+  configuration:
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    map-underscore-to-camel-case: true
+
+telegram:
+  token:
+
+security:
+  jwt:
+    issuer: dev
+    access:
+      secret:
+      expire-seconds: 7200
+    refresh:
+      secret:
+      expire-seconds: 604800
+    client:
+      web:
+        issue-tokens: [access, refresh]
+      tma:
+        issue-tokens: [access]
+
+
+proxy:
+  host: 127.0.0.1
+  port: 7898
