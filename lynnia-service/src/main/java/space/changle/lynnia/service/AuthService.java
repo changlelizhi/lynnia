@@ -45,7 +45,7 @@ public class AuthService implements AuthApi {
             throw new LynniaException(Result.AUTH_TELEGRAM_INVALID);
         }
         String userId = telegramAuth.getUser(initData).getId();
-        boolean userExist = userApi.isUserExist(userId);
+        boolean userExist = userApi.isNormalUser(userId);
         if (userExist) {
             return jwtTokenProvider.generateAccessToken(userId, LoginType.TMA);
         }
@@ -57,7 +57,7 @@ public class AuthService implements AuthApi {
         if (StringUtils.isBlank(userId) && StringUtils.isBlank(code)) {
             throw new LynniaException(Result.USER_ID_OR_CODE_EMPTY);
         }
-        if (!userApi.isUserExist(userId)) {
+        if (!userApi.isNormalUser(userId)) {
             throw new LynniaException(Result.USER_NOT_EXIST);
         }
         String cacheCode = stringRedisTemplate.opsForValue().get(RedisKey.loginCode(userId));

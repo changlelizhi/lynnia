@@ -1,5 +1,7 @@
 package space.changle.lynnia.api;
 
+import space.changle.lynnia.dto.outdto.CodeOutDto;
+import space.changle.lynnia.dto.outdto.UserCheckOutDto;
 import space.changle.lynnia.dto.outdto.UserInfoOutDto;
 
 /**
@@ -10,12 +12,19 @@ import space.changle.lynnia.dto.outdto.UserInfoOutDto;
  */
 public interface UserApi {
 
-    /**
-     * 判断用户是否存在
+  /**
+     * 是否是正常用户
      * @param userId 用户id
-     * @return true:存在 false:不存在
+     * @return 是否是正常用户
      */
-    boolean isUserExist(String userId);
+    boolean isNormalUser(String userId);
+
+    /**
+     * 是否是封禁用户
+     * @param userId 用户id
+     * @return 是否是封禁用户
+     */
+    boolean isBanUser(String userId);
 
     /**
      * 注册用户
@@ -49,5 +58,13 @@ public interface UserApi {
      * @param userId 用户id
      * @return 验证码
      */
-    String sendVerificationCode(String userId);
+    CodeOutDto sendVerificationCode(String userId);
+
+    /**
+     * 验证用户
+     * @param initData 初始化数据
+     */
+    UserCheckOutDto checkUser(String initData);
+
+
 }

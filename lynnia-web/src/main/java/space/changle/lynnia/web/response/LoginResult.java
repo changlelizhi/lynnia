@@ -6,6 +6,10 @@ package space.changle.lynnia.web.response;
  * @date 2026/2/28 22:44
  * @description
  */
-public record LoginResult(String accessToken, String loginType) {
+public record LoginResult(String accessToken) {
+
+    public static LoginResult of(String accessToken) {
+        return new LoginResult(accessToken);
+    }
 
 }

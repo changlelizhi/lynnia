@@ -35,6 +35,8 @@ public enum Result {
 
     CODE_INVALID(30006,"验证码无效"),
 
+    USER_BAN(30007,"用户被封禁"),
+
     UNAUTHORIZED(40100, "未授权"),
 
     TOKEN_EXPIRED(40101, "令牌已过期"),

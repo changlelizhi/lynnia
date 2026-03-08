@@ -37,13 +37,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        //获取path
+        String path = request.getServletPath();
+        log.info("path: {}", path);
+
         String token = resolveToken(request);
         try {
             if (token != null) {
                 Claims claims = jwtTokenProvider.parseAccessToken(token);
                 String userId = jwtTokenProvider.getUserId(claims);
                 LoginType loginType = LoginType.valueOf(claims.get("client_type", String.class));
-
                 List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(loginType.authority()));
                 Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authentication);

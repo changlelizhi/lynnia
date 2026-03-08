@@ -14,6 +14,8 @@ import space.changle.lynnia.common.enums.Result;
 import space.changle.lynnia.common.exception.LynniaException;
 import space.changle.lynnia.common.result.TmaUser;
 import space.changle.lynnia.common.util.UserUtils;
+import space.changle.lynnia.dto.outdto.CodeOutDto;
+import space.changle.lynnia.dto.outdto.UserCheckOutDto;
 import space.changle.lynnia.dto.outdto.UserInfoOutDto;
 import space.changle.lynnia.repo.entity.UserAccount;
 import space.changle.lynnia.repo.entity.UserGrowth;
@@ -52,9 +54,15 @@ public class UserService implements UserApi {
 
     private final StringRedisTemplate stringRedisTemplate;
 
+
     @Override
-    public boolean isUserExist(String userId) {
-        return Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(RedisKey.USER_ID_SET, userId));
+    public boolean isNormalUser(String userId) {
+        return Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(RedisKey.USER_NORMAL_SET, userId));
+    }
+
+    @Override
+    public boolean isBanUser(String userId) {
+        return Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(RedisKey.USER_BAN_SET, userId));
     }
 
     @Override
@@ -68,8 +76,11 @@ public class UserService implements UserApi {
         }
         TmaUser user = telegramAuth.getUser(initData);
         String userId = user.getId();
-        if (isUserExist(userId)) {
+        if (isNormalUser(userId)) {
             throw new LynniaException(Result.USER_EXIST);
+        }
+        if (isBanUser(userId)) {
+            throw new LynniaException(Result.USER_BAN);
         }
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         UserAccount userAccount = buildUserAccount(userId, now);
@@ -84,7 +95,7 @@ public class UserService implements UserApi {
                         @Override
                         public void afterCommit() {
                             stringRedisTemplate.opsForSet()
-                                    .add(RedisKey.USER_ID_SET, userId);
+                                    .add(RedisKey.USER_NORMAL_SET, userId);
                         }
                     }
             );
@@ -100,65 +111,101 @@ public class UserService implements UserApi {
 
     @Override
     public UserInfoOutDto queryUserInfo(String userId) {
-        if (!isUserExist(userId)) {
-            throw new LynniaException(Result.USER_NOT_EXIST);
+        if (isNormalUser(userId)) {
+            UserProfile userProfile = userProfileMapper.selectByUserId(userId);
+            UserGrowth userGrowth = userGrowthMapper.selectByUserId(userId);
+            return UserInfoOutDto.builder()
+                    .bio(userProfile.getBio())
+                    .photoUrl(userProfile.getPhotoUrl())
+                    .identityType(IdentityType.getById(userProfile.getIdentityType()))
+                    .timezone(userProfile.getTimezone())
+                    .reputation(userGrowth.getReputation())
+                    .totalCheckinDays(userGrowth.getTotalCheckinDays())
+                    .streakDays(userGrowth.getStreakDays())
+                    .build();
         }
-        UserProfile userProfile = userProfileMapper.selectByUserId(userId);
-        UserGrowth userGrowth = userGrowthMapper.selectByUserId(userId);
-        return UserInfoOutDto.builder()
-                .bio(userProfile.getBio())
-                .photoUrl(userProfile.getPhotoUrl())
-                .identityType(IdentityType.getById(userProfile.getIdentityType()))
-                .timezone(userProfile.getTimezone())
-                .reputation(userGrowth.getReputation())
-                .totalCheckinDays(userGrowth.getTotalCheckinDays())
-                .streakDays(userGrowth.getStreakDays())
-                .build();
+        if (isBanUser(userId)) {
+            throw new LynniaException(Result.USER_BAN);
+        }
+        throw new LynniaException(Result.USER_NOT_EXIST);
     }
 
     @Override
     public void saveProfile(String userId, String initData) {
-        if (!isUserExist(userId)) {
-            throw new LynniaException(Result.USER_NOT_EXIST);
+        if (isNormalUser(userId)) {
+            boolean valid = telegramAuth.isValid(initData);
+            if (!valid) {
+                throw new LynniaException(Result.AUTH_TELEGRAM_INVALID);
+            }
+            TmaUser user = telegramAuth.getUser(initData);
+            if (!user.getId().equals(userId)) {
+                throw new LynniaException(Result.AUTH_TELEGRAM_INVALID);
+            }
+            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+            String userName = UserUtils.getUserName(user.getFirstName(), user.getLastName());
+            userProfileMapper.updateProfile(userId, userName, user.getPhotoUrl(), now);
         }
-        boolean valid = telegramAuth.isValid(initData);
-        if (!valid) {
-            throw new LynniaException(Result.AUTH_TELEGRAM_INVALID);
+        if (isBanUser(userId)) {
+            throw new LynniaException(Result.USER_BAN);
         }
-        TmaUser user = telegramAuth.getUser(initData);
-        if (!user.getId().equals(userId)) {
-            throw new LynniaException(Result.AUTH_TELEGRAM_INVALID);
-        }
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        String userName = UserUtils.getUserName(user.getFirstName(), user.getLastName());
-        userProfileMapper.updateProfile(userId, userName, user.getPhotoUrl(), now);
+        throw new LynniaException(Result.USER_NOT_EXIST);
     }
 
     @Override
     public void saveUserBio(String userId, String bio) {
-        if (!isUserExist(userId)) {
-            throw new LynniaException(Result.USER_NOT_EXIST);
+
+        if (isNormalUser(userId)) {
+            if (bio.length() > UserConstant.MAX_BIO_LENGTH) {
+                throw new LynniaException(Result.BIO_TOO_LONG);
+            }
+            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+            userProfileMapper.updateBio(userId, bio, now);
         }
-        if (bio.length() > UserConstant.MAX_BIO_LENGTH) {
-            throw new LynniaException(Result.BIO_TOO_LONG);
+        if (isBanUser(userId)) {
+            throw new LynniaException(Result.USER_BAN);
         }
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        userProfileMapper.updateBio(userId, bio, now);
+        throw new LynniaException(Result.USER_NOT_EXIST);
     }
 
     @Override
-    public String sendVerificationCode(String userId) {
-        if (!isUserExist(userId)) {
-            throw new LynniaException(Result.USER_NOT_EXIST);
+    public CodeOutDto sendVerificationCode(String userId) {
+        if (isNormalUser(userId)) {
+            String code;
+            String key = RedisKey.loginCode(userId);
+            code = stringRedisTemplate.opsForValue().get(key);
+            if (StringUtils.isBlank(code)) {
+                code = UserUtils.generateCode();
+                stringRedisTemplate.opsForValue().set(key, code, Duration.ofMinutes(3));
+                return new CodeOutDto(code,180L);
+            }
+            Long expire = stringRedisTemplate.getExpire(key);
+            return new CodeOutDto(code,expire);
         }
-        String key = RedisKey.loginCode(userId);
-        String code = stringRedisTemplate.opsForValue().get(key);
-        if (StringUtils.isBlank(code)) {
-            code = UserUtils.generateCode();
-            stringRedisTemplate.opsForValue().set(key, code, Duration.ofMinutes(3));
+        if (isBanUser(userId)) {
+            throw new LynniaException(Result.USER_BAN);
         }
-        return code;
+        throw new LynniaException(Result.USER_NOT_EXIST);
     }
+
+    @Override
+    public UserCheckOutDto checkUser(String initData) {
+        if (StringUtils.isBlank(initData)) {
+            throw new LynniaException(Result.INIT_DATA_FAIL);
+        }
+        if (!telegramAuth.isValid(initData)) {
+            throw new LynniaException(Result.AUTH_TELEGRAM_INVALID);
+        }
+        TmaUser user = telegramAuth.getUser(initData);
+        String userId = user.getId();
+
+        boolean isNormal = isNormalUser(userId);
+        boolean isBan = isBanUser(userId);
+
+        boolean exist = isNormal || isBan;
+        String status = isBan ? "BAN" : (isNormal ? "NORMAL" : null);
+        return UserCheckOutDto.builder().exist(exist).status(status).build();
+    }
+
 
     private UserAccount buildUserAccount(String userId, OffsetDateTime dateTime) {
         return UserAccount.builder()
