@@ -8,11 +8,13 @@ import org.springframework.web.bind.annotation.*;
 import space.changle.lynnia.api.AuthApi;
 import space.changle.lynnia.api.UserApi;
 import space.changle.lynnia.common.result.ApiResult;
+import space.changle.lynnia.dto.outdto.SignupOutDto;
 import space.changle.lynnia.dto.outdto.UserCheckOutDto;
 import space.changle.lynnia.dto.outdto.WebTokenOutDto;
 import space.changle.lynnia.web.request.WebLoginRequest;
 import space.changle.lynnia.web.response.GetMeResult;
 import space.changle.lynnia.web.response.LoginResult;
+import space.changle.lynnia.web.response.SignupResult;
 
 
 /**
@@ -42,9 +44,9 @@ public class AuthController {
      * @return
      */
     @PostMapping("/register")
-    public ApiResult<Void> register(@RequestHeader(value = "X-TMA-InitData", required = false) String initData) {
-        userApi.registerUser(initData);
-        return ApiResult.success();
+    public ApiResult<SignupResult> register(@RequestHeader(value = "X-TMA-InitData", required = false) String initData) {
+        SignupOutDto signupOutDto = userApi.registerUser(initData);
+        return ApiResult.success(SignupResult.of(signupOutDto));
     }
 
     /**
@@ -75,7 +77,6 @@ public class AuthController {
 
     @GetMapping("/getme")
     public ApiResult<GetMeResult> getMe(@RequestHeader(value = "X-TMA-InitData", required = false) String initData) {
-        log.info("initData: {}", initData);
         UserCheckOutDto userCheckOutDto = userApi.checkUser(initData);
         GetMeResult getMeResult = new GetMeResult(userCheckOutDto.getStatus(), userCheckOutDto.isExist());
         return ApiResult.success(getMeResult);

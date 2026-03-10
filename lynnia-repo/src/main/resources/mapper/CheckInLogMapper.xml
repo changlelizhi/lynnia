@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="space.changle.lynnia.repo.mapper.CheckInLogMapper">
+
+    <resultMap id="CheckInLogResultMap" type="space.changle.lynnia.repo.entity.CheckInLog">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="changeVal" column="change_val"/>
+        <result property="checkInDate" column="check_in_date"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id
+        ,
+        user_id,
+        change_val,
+        check_in_date,
+        update_time
+    </sql>
+
+    <select id="selectById" resultMap="CheckInLogResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_checkin_log
+        WHERE user_id = #{userId}
+    </select>
+    <select id="selectLastCheckInDate" resultType="space.changle.lynnia.repo.entity.CheckInLog">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_checkin_log
+        WHERE user_id = #{userId}
+        AND check_in_date =#{checkInDate}
+
+    </select>
+    <select id="selectMonthCheckInDays" resultType="java.time.LocalDate">
+        SELECT check_in_date
+        FROM t_checkin_log
+        WHERE user_id = #{userId}
+          AND check_in_date &gt;= date_trunc('month', CURRENT_DATE)
+          AND check_in_date &lt; date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
+        ORDER BY check_in_date
+    </select>
+    <select id="existsTodayCheckIn" resultType="boolean">
+
+        SELECT EXISTS (
+            SELECT 1
+            FROM t_checkin_log
+            WHERE user_id = #{userId}
+              AND check_in_date = #{today}
+        )
+    </select>
+
+    <insert id="insertCheckInLog" parameterType="space.changle.lynnia.repo.entity.CheckInLog">
+        INSERT INTO t_checkin_log (user_id,
+                                    change_val,
+                                    check_in_date,
+                                    update_time)
+        VALUES (#{userId}, #{changeVal}, #{checkInDate}, #{updateTime})
+    </insert>
+
+
+</mapper>

@@ -25,7 +25,7 @@
     <select id="selectById" resultMap="UserAccountResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM t_user_account
-        WHERE user_id = #{userId,jdbcType=VARCHAR}
+        WHERE user_id = #{userId}
     </select>
 
     <insert id="insertAccount" parameterType="space.changle.lynnia.repo.entity.UserAccount">

@@ -45,11 +45,10 @@ public class AuthService implements AuthApi {
             throw new LynniaException(Result.AUTH_TELEGRAM_INVALID);
         }
         String userId = telegramAuth.getUser(initData).getId();
-        boolean userExist = userApi.isNormalUser(userId);
-        if (userExist) {
-            return jwtTokenProvider.generateAccessToken(userId, LoginType.TMA);
-        }
-        throw new LynniaException(Result.USER_NOT_EXIST);
+        userApi.assertNormalUser(userId);
+        log.info("userId: {}", userId);
+        return jwtTokenProvider.generateAccessToken(userId, LoginType.TMA);
+
     }
 
     @Override

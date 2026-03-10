@@ -20,6 +20,18 @@ public class UserInfoOutDto {
     // 用户名
     private String nickname;
 
+    // 总声望
+    private int reputation;
+
+    // 加次数
+    private int plusCount;
+
+    // 减次数
+    private int minusCount;
+
+    // 发布任务次数
+    private int taskCount;
+
     // 个人简介
     private String bio;
 
@@ -31,9 +43,6 @@ public class UserInfoOutDto {
 
     // 时区
     private String timezone;
-
-    // 积分
-    private int reputation;
 
     // 总签到天数
     private int totalCheckinDays;

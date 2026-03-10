@@ -37,6 +37,8 @@ public enum Result {
 
     USER_BAN(30007,"用户被封禁"),
 
+    USER_CHECKIN_TODAY(30008,"今天已签到"),
+
     UNAUTHORIZED(40100, "未授权"),
 
     TOKEN_EXPIRED(40101, "令牌已过期"),

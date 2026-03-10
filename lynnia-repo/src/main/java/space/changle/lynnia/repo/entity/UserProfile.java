@@ -5,7 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+
 
 /**
  * @author 长乐
@@ -35,9 +37,29 @@ public class UserProfile {
     private String tgUsername;
 
     /**
+     * 声望值
+     */
+    private Integer reputation;
+
+    /**
      * 个人简介
      */
     private String bio;
+
+    /**
+     * 加时次数
+     */
+    private Integer plusCount;
+
+    /**
+     * 减时次数
+     */
+    private Integer minusCount;
+
+    /**
+     * 发布任务次数
+     */
+    private Integer taskCount;
 
     /**
      * 头像URL
@@ -45,7 +67,7 @@ public class UserProfile {
     private String photoUrl;
 
     /**
-     * 0未选 1Dom 2Sub 3Switch
+     * 身份类型（0未选 1Dom 2Sub 3Switch）
      */
     private Integer identityType;
 

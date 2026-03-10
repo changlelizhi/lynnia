@@ -21,5 +21,5 @@ public interface UserProfileMapper {
 
     int updateProfile(@Param("userId") String userId, @Param("nickname") String nickname, @Param("photoUrl") String photoUrl, @Param("updateTime") OffsetDateTime updateTime);
 
-
+    int updateReputation (@Param("userId") String userId, @Param("reputation") int reputation, @Param("updateTime") OffsetDateTime updateTime);
 }

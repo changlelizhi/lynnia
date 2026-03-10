@@ -10,28 +10,27 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import space.changle.lynnia.api.UserApi;
+import space.changle.lynnia.common.constant.LynniaConstant;
 import space.changle.lynnia.common.enums.Result;
 import space.changle.lynnia.common.exception.LynniaException;
 import space.changle.lynnia.common.result.TmaUser;
 import space.changle.lynnia.common.util.UserUtils;
-import space.changle.lynnia.dto.outdto.CodeOutDto;
-import space.changle.lynnia.dto.outdto.UserCheckOutDto;
-import space.changle.lynnia.dto.outdto.UserInfoOutDto;
+import space.changle.lynnia.dto.outdto.*;
+import space.changle.lynnia.repo.entity.CheckInLog;
 import space.changle.lynnia.repo.entity.UserAccount;
-import space.changle.lynnia.repo.entity.UserGrowth;
 import space.changle.lynnia.repo.entity.UserProfile;
+import space.changle.lynnia.repo.mapper.CheckInLogMapper;
 import space.changle.lynnia.repo.mapper.UserAccountMapper;
-import space.changle.lynnia.repo.mapper.UserGrowthMapper;
 import space.changle.lynnia.repo.mapper.UserProfileMapper;
 import space.changle.lynnia.service.constant.RedisKey;
 import space.changle.lynnia.security.auth.TelegramAuth;
 import space.changle.lynnia.service.constant.UserConstant;
-import space.changle.lynnia.service.enums.IdentityType;
-import space.changle.lynnia.service.enums.UserStatus;
+import space.changle.lynnia.api.enums.IdentityType;
+import space.changle.lynnia.api.enums.UserStatus;
 
-import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 /**
  * @author 长乐
@@ -50,7 +49,7 @@ public class UserService implements UserApi {
 
     private final UserProfileMapper userProfileMapper;
 
-    private final UserGrowthMapper userGrowthMapper;
+    private final CheckInLogMapper checkInLogMapper;
 
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -66,68 +65,66 @@ public class UserService implements UserApi {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void registerUser(String initData) {
-        if (StringUtils.isBlank(initData)) {
-            throw new LynniaException(Result.INIT_DATA_FAIL);
+    public void assertNormalUser(String userId) {
+
+        UserStatus status = checkUserStatus(userId);
+
+        if (status == UserStatus.BANNED) {
+            throw new LynniaException(Result.USER_BAN);
         }
+
+        if (status == UserStatus.NOT_EXIST) {
+            throw new LynniaException(Result.USER_NOT_EXIST);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public SignupOutDto registerUser(String initData) {
         if (!telegramAuth.isValid(initData)) {
             throw new LynniaException(Result.AUTH_TELEGRAM_INVALID);
         }
         TmaUser user = telegramAuth.getUser(initData);
         String userId = user.getId();
-        if (isNormalUser(userId)) {
-            throw new LynniaException(Result.USER_EXIST);
+        UserStatus userStatus = checkUserStatus(userId);
+        if (userStatus == UserStatus.NORMAL) {
+            return SignupOutDto.builder()
+                    .signUpResult(true)
+                    .userId(userId)
+                    .build();
         }
-        if (isBanUser(userId)) {
+        if (userStatus == UserStatus.BANNED) {
             throw new LynniaException(Result.USER_BAN);
         }
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+
+        OffsetDateTime now = OffsetDateTime.now(LynniaConstant.SYSTEM_ZONE);
         UserAccount userAccount = buildUserAccount(userId, now);
         UserProfile userProfile = buildUserProfile(user, now);
-        UserGrowth userGrowth = buildUserGrowth(userId, now);
         try {
             userAccountMapper.insertAccount(userAccount);
             userProfileMapper.insertProfile(userProfile);
-            userGrowthMapper.insertGrowth(userGrowth);
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            stringRedisTemplate.opsForSet()
-                                    .add(RedisKey.USER_NORMAL_SET, userId);
+                            stringRedisTemplate.opsForValue().set(RedisKey.USER_STATUS_PREFIX + userId, String.valueOf(UserStatus.NORMAL.getCode()));
+                            stringRedisTemplate.opsForValue().set(RedisKey.USER_TIME_ZONE_PREFIX + userId, "Asia/Shanghai");
                         }
                     }
             );
+            return SignupOutDto.builder().signUpResult(true).userId(userId).build();
         } catch (DuplicateKeyException e) {
-            if (userAccountMapper.selectById(userId) != null) {
-                // 已存在 → 幂等返回成功
-                return;
-            }
-            throw new LynniaException(Result.SYSTEM_ERROR);
+            return SignupOutDto.builder().signUpResult(true).userId(userId).build();
         }
 
     }
 
     @Override
     public UserInfoOutDto queryUserInfo(String userId) {
-        if (isNormalUser(userId)) {
-            UserProfile userProfile = userProfileMapper.selectByUserId(userId);
-            UserGrowth userGrowth = userGrowthMapper.selectByUserId(userId);
-            return UserInfoOutDto.builder()
-                    .bio(userProfile.getBio())
-                    .photoUrl(userProfile.getPhotoUrl())
-                    .identityType(IdentityType.getById(userProfile.getIdentityType()))
-                    .timezone(userProfile.getTimezone())
-                    .reputation(userGrowth.getReputation())
-                    .totalCheckinDays(userGrowth.getTotalCheckinDays())
-                    .streakDays(userGrowth.getStreakDays())
-                    .build();
-        }
-        if (isBanUser(userId)) {
-            throw new LynniaException(Result.USER_BAN);
-        }
-        throw new LynniaException(Result.USER_NOT_EXIST);
+        assertNormalUser(userId);
+        UserProfile userProfile = userProfileMapper.selectByUserId(userId);
+
+        return null;
     }
 
     @Override
@@ -141,7 +138,7 @@ public class UserService implements UserApi {
             if (!user.getId().equals(userId)) {
                 throw new LynniaException(Result.AUTH_TELEGRAM_INVALID);
             }
-            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+            OffsetDateTime now = OffsetDateTime.now(LynniaConstant.SYSTEM_ZONE);
             String userName = UserUtils.getUserName(user.getFirstName(), user.getLastName());
             userProfileMapper.updateProfile(userId, userName, user.getPhotoUrl(), now);
         }
@@ -158,7 +155,7 @@ public class UserService implements UserApi {
             if (bio.length() > UserConstant.MAX_BIO_LENGTH) {
                 throw new LynniaException(Result.BIO_TOO_LONG);
             }
-            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+            OffsetDateTime now = OffsetDateTime.now(LynniaConstant.SYSTEM_ZONE);
             userProfileMapper.updateBio(userId, bio, now);
         }
         if (isBanUser(userId)) {
@@ -169,29 +166,22 @@ public class UserService implements UserApi {
 
     @Override
     public CodeOutDto sendVerificationCode(String userId) {
-        if (isNormalUser(userId)) {
-            String code;
-            String key = RedisKey.loginCode(userId);
-            code = stringRedisTemplate.opsForValue().get(key);
-            if (StringUtils.isBlank(code)) {
-                code = UserUtils.generateCode();
-                stringRedisTemplate.opsForValue().set(key, code, Duration.ofMinutes(3));
-                return new CodeOutDto(code,180L);
-            }
-            Long expire = stringRedisTemplate.getExpire(key);
-            return new CodeOutDto(code,expire);
+
+        assertNormalUser(userId);
+        String key = RedisKey.loginCode(userId);
+        String code = stringRedisTemplate.opsForValue().get(key);
+        if (StringUtils.isBlank(code)) {
+            code = UserUtils.generateCode();
+            stringRedisTemplate.opsForValue().set(key, code, Duration.ofMinutes(3));
+            return new CodeOutDto(code, 180L);
         }
-        if (isBanUser(userId)) {
-            throw new LynniaException(Result.USER_BAN);
-        }
-        throw new LynniaException(Result.USER_NOT_EXIST);
+        Long expire = stringRedisTemplate.getExpire(key);
+        return new CodeOutDto(code, expire);
+
     }
 
     @Override
     public UserCheckOutDto checkUser(String initData) {
-        if (StringUtils.isBlank(initData)) {
-            throw new LynniaException(Result.INIT_DATA_FAIL);
-        }
         if (!telegramAuth.isValid(initData)) {
             throw new LynniaException(Result.AUTH_TELEGRAM_INVALID);
         }
@@ -204,6 +194,58 @@ public class UserService implements UserApi {
         boolean exist = isNormal || isBan;
         String status = isBan ? "BAN" : (isNormal ? "NORMAL" : null);
         return UserCheckOutDto.builder().exist(exist).status(status).build();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void userSignIn(String userId) {
+        assertNormalUser(userId);
+        LocalDate today = LocalDate.now(LynniaConstant.SYSTEM_ZONE);
+        OffsetDateTime now = OffsetDateTime.now(LynniaConstant.SYSTEM_ZONE);
+        ;
+        CheckInLog checkInLog = CheckInLog.builder()
+                .userId(userId)
+                .changeVal(UserConstant.SIGN_VALUE)
+                .checkInDate(today)
+                .updateTime(now)
+                .build();
+
+        try {
+            checkInLogMapper.insertCheckInLog(checkInLog);
+            userProfileMapper.updateReputation(userId, UserConstant.SIGN_VALUE, now);
+        } catch (DuplicateKeyException e) {
+            throw new LynniaException(Result.USER_CHECKIN_TODAY);
+        }
+    }
+
+    @Override
+    public SignOutDto isSign(String userId) {
+        if (isNormalUser(userId)) {
+            LocalDate today = LocalDate.now(LynniaConstant.SYSTEM_ZONE);
+            boolean existsTodayCheckIn = checkInLogMapper.existsTodayCheckIn(userId, today);
+            //localDates转成用户自己的时区
+            List<LocalDate> localDates = checkInLogMapper.selectMonthCheckInDays(userId);
+
+            //用户自己设置的时区
+            String timeZone = stringRedisTemplate.opsForValue().get(RedisKey.USER_TIME_ZONE_PREFIX + userId);
+            ZoneId userZone = ZoneId.of(timeZone);
+
+            List<LocalDate> userDates = localDates.stream()
+                    .map(date -> date
+                            .atStartOfDay(LynniaConstant.SYSTEM_ZONE)
+                            .withZoneSameInstant(userZone)
+                            .toLocalDate())
+                    .toList();
+            return SignOutDto.builder()
+                    .isSigned(existsTodayCheckIn)
+                    .history(userDates)
+                    .build();
+        }
+        if (isBanUser(userId)) {
+            throw new LynniaException(Result.USER_BAN);
+        }
+        throw new LynniaException(Result.USER_NOT_EXIST);
+
     }
 
 
@@ -223,7 +265,11 @@ public class UserService implements UserApi {
                 .userId(user.getId())
                 .nickname(UserUtils.getUserName(user.getFirstName(), user.getLastName()))
                 .tgUsername(user.getTgUserName())
+                .reputation(UserConstant.DEFAULT)
                 .bio("")
+                .plusCount(UserConstant.DEFAULT_COUNT)
+                .minusCount(UserConstant.DEFAULT_COUNT)
+                .taskCount(UserConstant.DEFAULT_COUNT)
                 .photoUrl(user.getPhotoUrl())
                 .identityType(IdentityType.UNSELECTED.getCode())
                 .timezone("Asia/Shanghai")
@@ -231,17 +277,18 @@ public class UserService implements UserApi {
                 .build();
     }
 
-    private UserGrowth buildUserGrowth(String userId, OffsetDateTime dateTime) {
-        return UserGrowth.builder()
-                .userId(userId)
-                .reputation(UserConstant.DEFAULT)
-                .totalCheckinDays(UserConstant.DEFAULT)
-                .streakDays(UserConstant.DEFAULT)
-                .plusCount(UserConstant.DEFAULT_COUNT)
-                .minusCount(UserConstant.DEFAULT_COUNT)
-                .taskCount(UserConstant.DEFAULT_COUNT)
-                .updateTime(dateTime)
-                .build();
+
+    private boolean isValidTimeZone(String zone) {
+        return ZoneId.getAvailableZoneIds().contains(zone);
     }
 
+
+    private UserStatus checkUserStatus(String userId) {
+        String cacheValue = stringRedisTemplate.opsForValue().get(RedisKey.USER_STATUS_PREFIX + userId);
+
+        if (cacheValue == null) {
+            return UserStatus.NOT_EXIST;
+        }
+        return UserStatus.fromCode(Integer.parseInt(cacheValue));
+    }
 }

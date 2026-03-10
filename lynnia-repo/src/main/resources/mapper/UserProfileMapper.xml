@@ -10,7 +10,11 @@
         <id property="userId" column="user_id"/>
         <result property="nickname" column="nickname"/>
         <result property="tgUsername" column="tg_username"/>
+        <result property="reputation" column="reputation"/>
         <result property="bio" column="bio"/>
+        <result property="plusCount" column="plus_count"/>
+        <result property="minusCount" column="minus_count"/>
+        <result property="taskCount" column="task_count"/>
         <result property="photoUrl" column="photo_url"/>
         <result property="identityType" column="identity_type"/>
         <result property="timezone" column="timezone"/>
@@ -21,13 +25,17 @@
     <!-- 基础字段 -->
     <sql id="Base_Column_List">
         user_id,
-            nickname,
-            tg_username,
-            bio,
-            photo_url,
-            identity_type,
-            timezone,
-            update_time
+        nickname,
+        tg_username,
+        reputation,
+        bio,
+        plus_count,
+        minus_count,
+        task_count,
+        photo_url,
+        identity_type,
+        timezone,
+        update_time
     </sql>
 
 
@@ -36,28 +44,30 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM t_user_profile
-        WHERE user_id = #{userId,jdbcType=VARCHAR}
+        WHERE user_id = #{userId}
     </select>
 
 
     <!-- 插入 -->
     <insert id="insertProfile" parameterType="space.changle.lynnia.repo.entity.UserProfile">
-        INSERT INTO t_user_profile (user_id,
-                                    nickname,
-                                    tg_username,
-                                    bio,
-                                    photo_url,
-                                    identity_type,
-                                    timezone,
-                                    update_time)
-        VALUES (#{userId},
-                #{nickname},
-                #{tgUsername},
-                #{bio},
-                #{photoUrl},
-                #{identityType},
-                #{timezone},
-                #{updateTime})
+        INSERT INTO t_user_profile (
+        <include refid="Base_Column_List"/>
+        ) VALUES (
+        #{userId},
+        #{nickname},
+        #{tgUsername},
+        #{reputation},
+        #{bio},
+        #{plusCount},
+        #{minusCount},
+        #{taskCount},
+        #{photoUrl},
+        #{identityType},
+        #{timezone},
+        #{updateTime}
+        )
+
+
     </insert>
 
     <update id="updateBio" parameterType="space.changle.lynnia.repo.entity.UserProfile">
@@ -80,6 +90,12 @@
         </set>
         WHERE user_id = #{userId}
 
+    </update>
+    <update id="updateReputation">
+        UPDATE t_user_profile
+        SET reputation = reputation + #{reputation},
+            update_time = #{updateTime}
+        WHERE user_id = #{userId}
     </update>
 
 

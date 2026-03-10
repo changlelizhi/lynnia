@@ -1,8 +1,6 @@
 package space.changle.lynnia.api;
 
-import space.changle.lynnia.dto.outdto.CodeOutDto;
-import space.changle.lynnia.dto.outdto.UserCheckOutDto;
-import space.changle.lynnia.dto.outdto.UserInfoOutDto;
+import space.changle.lynnia.dto.outdto.*;
 
 /**
  * @author 长乐
@@ -12,8 +10,9 @@ import space.changle.lynnia.dto.outdto.UserInfoOutDto;
  */
 public interface UserApi {
 
-  /**
+    /**
      * 是否是正常用户
+     *
      * @param userId 用户id
      * @return 是否是正常用户
      */
@@ -21,19 +20,29 @@ public interface UserApi {
 
     /**
      * 是否是封禁用户
+     *
      * @param userId 用户id
      * @return 是否是封禁用户
      */
     boolean isBanUser(String userId);
 
     /**
+     * 断言是否是正常用户
+     *
+     * @param userId 用户id
+     */
+    void  assertNormalUser(String userId);
+
+    /**
      * 注册用户
+     *
      * @param initData 初始化数据
      */
-    void registerUser(String initData);
+    SignupOutDto registerUser(String initData);
 
     /**
      * 查询用户信息
+     *
      * @param userId 用户id
      * @return 用户信息
      */
@@ -41,20 +50,23 @@ public interface UserApi {
 
     /**
      * 保存用户信息
-     * @param userId 用户id
-     * @param initData  初始化数据
+     *
+     * @param userId   用户id
+     * @param initData 初始化数据
      */
     void saveProfile(String userId, String initData);
 
     /**
      * 保存用户简介
+     *
      * @param userId 用户id
-     * @param bio 简介
+     * @param bio    简介
      */
-    void saveUserBio(String userId,  String bio);
+    void saveUserBio(String userId, String bio);
 
     /**
      * 发送验证码
+     *
      * @param userId 用户id
      * @return 验证码
      */
@@ -62,9 +74,23 @@ public interface UserApi {
 
     /**
      * 验证用户
+     *
      * @param initData 初始化数据
      */
     UserCheckOutDto checkUser(String initData);
 
+    /**
+     * 用户签到
+     *
+     * @param userId 用户id
+     */
+    void userSignIn(String userId);
 
+    /**
+     * 是否已签到
+     *
+     * @param userId 用户id
+     * @return 是否已签到
+     */
+    SignOutDto isSign(String userId);
 }

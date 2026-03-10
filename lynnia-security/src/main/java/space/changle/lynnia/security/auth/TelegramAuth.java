@@ -36,6 +36,9 @@ public class TelegramAuth {
     private String botToken;
 
     public boolean isValid(String tmaInitData) {
+        if (StringUtils.isBlank(tmaInitData)) {
+            throw new LynniaException(Result.AUTH_INIT_MISSING_PARAM);
+        }
         Pair<String, String> result = parseInitData(tmaInitData);
         String hash = result.first();
         String initData = result.second();

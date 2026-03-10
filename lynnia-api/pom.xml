@@ -17,9 +17,20 @@
             <artifactId>telegrambots-meta</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
             <groupId>space.changle</groupId>
             <artifactId>lynnia-dto</artifactId>
             <version>{revision}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>space.changle</groupId>
+            <artifactId>lynnia-common</artifactId>
+            <version>{revision}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

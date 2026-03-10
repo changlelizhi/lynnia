@@ -16,9 +16,13 @@ public final class RedisKey {
     // 封禁用户集合
     public static final String USER_BAN_SET = "user:ban:set";
 
+    public static final String USER_STATUS_PREFIX="user:status:";
 
     // 登录验证码
     public static final String USER_LOGIN_CODE_PREFIX = "user:login:code:";
+
+    //用户时区
+    public static final String USER_TIME_ZONE_PREFIX = "user:time:zone:";
 
     public static String loginCode(String userId) {
         return USER_LOGIN_CODE_PREFIX + userId;

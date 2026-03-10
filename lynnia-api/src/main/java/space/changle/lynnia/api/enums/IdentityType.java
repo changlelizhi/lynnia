@@ -1,4 +1,4 @@
-package space.changle.lynnia.service.enums;
+package space.changle.lynnia.api.enums;
 
 import lombok.Getter;
 import space.changle.lynnia.common.enums.Result;
@@ -8,7 +8,7 @@ import space.changle.lynnia.common.exception.LynniaException;
  * @author 长乐
  * @version 1.0.0
  * @date 2026/3/4 18:35
- * @description
+ * @description 用户身份枚举
  */
 @Getter
 public enum IdentityType {

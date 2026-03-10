@@ -5,48 +5,45 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-
 
 /**
  * @author 长乐
- * @date 2026/3/5 23:44
  * @version 1.0.0
- * @description 用户账户表 (t_user_account)
+ * @date 2026/3/9 19:49
+ * @description
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserAccount {
+public class CheckInLog  {
 
     /**
-     * 用户唯一ID
+     * 日志ID
+     */
+    private Long id;
+
+    /**
+     * 用户ID
      */
     private String userId;
 
     /**
-     * 1正常 2冻结 3封禁
+     * 变更值
      */
-    private Integer status;
+    private Integer changeVal;
 
     /**
-     * 任务审核权限
+     * 签到时间(UTC)
      */
-    private Boolean taskReviewer;
-
-    /**
-     * 封禁解封权限
-     */
-    private Boolean banOperator;
-
-    /**
-     * 注册时间(UTC)
-     */
-    private OffsetDateTime registerTime;
+    private LocalDate checkInDate;
 
     /**
      * 更新时间(UTC)
      */
     private OffsetDateTime updateTime;
+
 }

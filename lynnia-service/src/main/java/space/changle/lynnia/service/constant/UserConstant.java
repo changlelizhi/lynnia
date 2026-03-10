@@ -13,4 +13,6 @@ public class UserConstant {
     public static final int DEFAULT = 0;
 
     public static final int MAX_BIO_LENGTH = 150;
+
+    public static final int SIGN_VALUE = 20;
 }
