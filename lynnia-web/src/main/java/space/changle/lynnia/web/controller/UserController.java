@@ -6,12 +6,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import space.changle.lynnia.api.UserApi;
 import space.changle.lynnia.common.result.ApiResult;
+import space.changle.lynnia.dto.outdto.CheckinOutDto;
 import space.changle.lynnia.dto.outdto.CodeOutDto;
-import space.changle.lynnia.dto.outdto.SignOutDto;
 import space.changle.lynnia.dto.outdto.UserInfoOutDto;
 import space.changle.lynnia.web.request.UserBioRequest;
 import space.changle.lynnia.web.response.CodeResult;
-import space.changle.lynnia.web.response.SignResult;
+import space.changle.lynnia.web.response.CheckinResult;
 import space.changle.lynnia.web.response.UserInfoResult;
 
 /**
@@ -79,17 +79,18 @@ public class UserController {
     }
 
     //签到
-    @PostMapping("/signin")
-    public ApiResult<Void> sign(@AuthenticationPrincipal String userId) {
-        userApi.userSignIn(userId);
+    @PostMapping("/checkin")
+    public ApiResult<Void> checkin(@AuthenticationPrincipal String userId) {
+        userApi.userCheckin(userId);
         return ApiResult.success();
     }
 
-    //是否签到
-    @GetMapping("/isSign")
-    public ApiResult<SignResult> isSign(@AuthenticationPrincipal String userId) {
-        SignOutDto signOutDto = userApi.isSign(userId);
-        return ApiResult.success(SignResult.of(signOutDto));
+
+    // 签到信息
+    @GetMapping("/checkinInfo")
+    public ApiResult<CheckinResult> checkinInfo(@AuthenticationPrincipal String userId) {
+        CheckinOutDto checkinOutDto = userApi.checkinStatusAndHistory(userId);
+        return ApiResult.success(  CheckinResult.of(checkinOutDto));
     }
 
 

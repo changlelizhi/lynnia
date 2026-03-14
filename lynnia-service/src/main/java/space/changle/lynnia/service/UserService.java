@@ -29,8 +29,8 @@ import space.changle.lynnia.api.enums.IdentityType;
 import space.changle.lynnia.api.enums.UserStatus;
 
 import java.time.*;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author 长乐
@@ -196,57 +196,50 @@ public class UserService implements UserApi {
         return UserCheckOutDto.builder().exist(exist).status(status).build();
     }
 
+
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void userSignIn(String userId) {
+    public void userCheckin(String userId) {
         assertNormalUser(userId);
         LocalDate today = LocalDate.now(LynniaConstant.SYSTEM_ZONE);
         OffsetDateTime now = OffsetDateTime.now(LynniaConstant.SYSTEM_ZONE);
-        ;
         CheckInLog checkInLog = CheckInLog.builder()
                 .userId(userId)
                 .changeVal(UserConstant.SIGN_VALUE)
                 .checkInDate(today)
                 .updateTime(now)
                 .build();
-
         try {
             checkInLogMapper.insertCheckInLog(checkInLog);
             userProfileMapper.updateReputation(userId, UserConstant.SIGN_VALUE, now);
-        } catch (DuplicateKeyException e) {
+
+        }catch (DuplicateKeyException e){
             throw new LynniaException(Result.USER_CHECKIN_TODAY);
         }
+
     }
 
     @Override
-    public SignOutDto isSign(String userId) {
-        if (isNormalUser(userId)) {
-            LocalDate today = LocalDate.now(LynniaConstant.SYSTEM_ZONE);
-            boolean existsTodayCheckIn = checkInLogMapper.existsTodayCheckIn(userId, today);
-            //localDates转成用户自己的时区
-            List<LocalDate> localDates = checkInLogMapper.selectMonthCheckInDays(userId);
+    public CheckinOutDto checkinStatusAndHistory(String userId) {
+        assertNormalUser(userId);
+        LocalDate today = LocalDate.now(LynniaConstant.SYSTEM_ZONE);
+        boolean existsTodayCheckIn = checkInLogMapper.existsTodayCheckIn(userId, today);
+        log.info("{} {}", userId, existsTodayCheckIn);
+        List<LocalDate> localDates = checkInLogMapper.selectMonthCheckInDays(userId);
+        String timeZone = stringRedisTemplate.opsForValue().get(RedisKey.USER_TIME_ZONE_PREFIX + userId);
+        ZoneId userZone = ZoneId.of(Objects.requireNonNull(timeZone));
+        log.info("{} {} {}", timeZone,existsTodayCheckIn, userZone);
+        List<LocalDate> userDates = localDates.stream()
+                .map(date -> date
+                        .atStartOfDay(LynniaConstant.SYSTEM_ZONE)
+                        .withZoneSameInstant(userZone)
+                        .toLocalDate())
+                .toList();
 
-            //用户自己设置的时区
-            String timeZone = stringRedisTemplate.opsForValue().get(RedisKey.USER_TIME_ZONE_PREFIX + userId);
-            ZoneId userZone = ZoneId.of(timeZone);
-
-            List<LocalDate> userDates = localDates.stream()
-                    .map(date -> date
-                            .atStartOfDay(LynniaConstant.SYSTEM_ZONE)
-                            .withZoneSameInstant(userZone)
-                            .toLocalDate())
-                    .toList();
-            return SignOutDto.builder()
-                    .isSigned(existsTodayCheckIn)
-                    .history(userDates)
-                    .build();
-        }
-        if (isBanUser(userId)) {
-            throw new LynniaException(Result.USER_BAN);
-        }
-        throw new LynniaException(Result.USER_NOT_EXIST);
-
+        return CheckinOutDto.builder().isCheckined(existsTodayCheckIn).history(userDates).build();
     }
+
+
 
 
     private UserAccount buildUserAccount(String userId, OffsetDateTime dateTime) {

@@ -80,17 +80,17 @@ public interface UserApi {
     UserCheckOutDto checkUser(String initData);
 
     /**
+     * 签到状态和历史
+     *
+     * @param userId 用户id
+     * @return 签到状态和历史
+     */
+    CheckinOutDto checkinStatusAndHistory(String userId);
+
+    /**
      * 用户签到
      *
      * @param userId 用户id
      */
-    void userSignIn(String userId);
-
-    /**
-     * 是否已签到
-     *
-     * @param userId 用户id
-     * @return 是否已签到
-     */
-    SignOutDto isSign(String userId);
+    void userCheckin(String userId);
 }

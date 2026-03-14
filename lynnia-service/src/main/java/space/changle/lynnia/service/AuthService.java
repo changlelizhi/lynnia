@@ -10,6 +10,7 @@ import space.changle.lynnia.api.UserApi;
 import space.changle.lynnia.common.enums.LoginType;
 import space.changle.lynnia.common.enums.Result;
 import space.changle.lynnia.common.exception.LynniaException;
+import space.changle.lynnia.dto.outdto.LoginOutDto;
 import space.changle.lynnia.dto.outdto.WebTokenOutDto;
 import space.changle.lynnia.security.token.JwtTokenProvider;
 import space.changle.lynnia.service.constant.RedisKey;
@@ -36,19 +37,16 @@ public class AuthService implements AuthApi {
 
 
     @Override
-    public String tmaLogin(String initData) {
-        if (StringUtils.isBlank(initData)) {
-            throw new LynniaException(Result.INIT_DATA_FAIL);
-        }
+    public LoginOutDto tmaLogin(String initData) {
+
         boolean valid = telegramAuth.isValid(initData);
         if (!valid) {
             throw new LynniaException(Result.AUTH_TELEGRAM_INVALID);
         }
         String userId = telegramAuth.getUser(initData).getId();
         userApi.assertNormalUser(userId);
-        log.info("userId: {}", userId);
-        return jwtTokenProvider.generateAccessToken(userId, LoginType.TMA);
-
+        String token = jwtTokenProvider.generateAccessToken(userId, LoginType.TMA);
+        return LoginOutDto.builder().token(token).build();
     }
 
     @Override

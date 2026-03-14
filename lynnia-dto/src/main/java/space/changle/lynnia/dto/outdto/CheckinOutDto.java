@@ -18,9 +18,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class SignOutDto {
+public class CheckinOutDto {
 
-    private boolean isSigned;
+    //是否签到
+
+    private boolean isCheckined;
 
     private List<LocalDate> history;
 

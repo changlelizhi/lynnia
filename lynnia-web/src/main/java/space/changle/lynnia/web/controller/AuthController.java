@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import space.changle.lynnia.api.AuthApi;
 import space.changle.lynnia.api.UserApi;
 import space.changle.lynnia.common.result.ApiResult;
+import space.changle.lynnia.dto.outdto.LoginOutDto;
 import space.changle.lynnia.dto.outdto.SignupOutDto;
 import space.changle.lynnia.dto.outdto.UserCheckOutDto;
 import space.changle.lynnia.dto.outdto.WebTokenOutDto;
@@ -53,13 +54,14 @@ public class AuthController {
      * @param initData
      * @return
      */
-    @PostMapping("/tmalogin")
+    @PostMapping("/tmaLogin")
     public ApiResult<LoginResult> tgLogin(@RequestHeader(value = "X-TMA-InitData", required = false) String initData) {
-        String tmaedLogin = authApi.tmaLogin(initData);
-        return ApiResult.success(LoginResult.of(tmaedLogin));
+        log.info("tgLogin: {}", initData);
+        LoginOutDto loginOutDto = authApi.tmaLogin(initData);
+        return ApiResult.success(LoginResult.of(loginOutDto));
     }
 
-    @PostMapping("/weblogin")
+    @PostMapping("/webLogin")
     public ApiResult<String> webLogin(@Valid @RequestBody WebLoginRequest webLoginRequest, HttpServletResponse response) {
         String userId = webLoginRequest.userId();
         String code = webLoginRequest.code();

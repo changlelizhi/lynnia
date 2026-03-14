@@ -42,7 +42,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/tmalogin", "/api/auth/weblogin","/api/auth/register","/api/auth/getme").permitAll()
+                        .requestMatchers("/api/auth/tmaLogin", "/api/auth/webLogin","/api/auth/register","/api/auth/getme").permitAll()
                         .requestMatchers("/api/tma/**").hasAuthority(LoginType.TMA.authority())
                         .requestMatchers("/api/web/**").hasAuthority(LoginType.WEB.authority())
                         .anyRequest().authenticated()

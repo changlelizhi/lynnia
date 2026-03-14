@@ -1,6 +1,7 @@
 package space.changle.lynnia.web.response;
 
-import space.changle.lynnia.dto.outdto.SignOutDto;
+
+import space.changle.lynnia.dto.outdto.CheckinOutDto;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -12,17 +13,17 @@ import java.util.Optional;
  * @date 2026/3/9 18:14
  * @description
  */
-public record SignResult(boolean isSigned, List<String> history) {
+public record CheckinResult(boolean isCheckined, List<String> history) {
 
 
-    public static SignResult of(SignOutDto signOutDto){
-        List<String> history = Optional.ofNullable(signOutDto.getHistory())
+    public static CheckinResult of(CheckinOutDto checkinOutDto){
+        List<String> history = Optional.ofNullable(checkinOutDto.getHistory())
                 .orElse(List.of())
                 .stream()
                 .map(LocalDate::toString)
                 .toList();
-        return new SignResult(
-                signOutDto.isSigned(),
+        return new CheckinResult(
+                checkinOutDto.isCheckined(),
                 history
         );
     }

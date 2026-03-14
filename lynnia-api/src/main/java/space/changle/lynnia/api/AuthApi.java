@@ -1,5 +1,6 @@
 package space.changle.lynnia.api;
 
+import space.changle.lynnia.dto.outdto.LoginOutDto;
 import space.changle.lynnia.dto.outdto.WebTokenOutDto;
 
 /**
@@ -15,7 +16,7 @@ public interface AuthApi {
      * @param initData tma初始化数据
      * @return 登录结果
      */
-    String tmaLogin(String initData);
+    LoginOutDto tmaLogin(String initData);
 
     /**
      * web登录
