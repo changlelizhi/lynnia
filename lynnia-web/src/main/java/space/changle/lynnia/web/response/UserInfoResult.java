@@ -1,6 +1,8 @@
 package space.changle.lynnia.web.response;
 
 
+import space.changle.lynnia.api.enums.IdentityType;
+import space.changle.lynnia.api.enums.UserStatus;
 import space.changle.lynnia.dto.outdto.UserInfoOutDto;
 
 /**
@@ -10,38 +12,33 @@ import space.changle.lynnia.dto.outdto.UserInfoOutDto;
  * @description
  */
 public record UserInfoResult(
-        Profile profile,
-        Growth growth
+        String nickname,
+        int reputation,
+        int totalCheckinDays,
+        int plusCount,
+        int minusCount,
+        int taskCount,
+        String identityType,
+        String timezone,
+        String bio,
+        String photoUrl,
+        String status
 ) {
 
-    public record Profile(
-            String bio,
-            String photoUrl,
-            String identityType,
-            String timezone
-    ) {}
-
-    public record Growth(
-            int reputation,
-            int totalCheckinDays,
-            int streakDays
-    ) {}
-
-    public static UserInfoResult of(UserInfoOutDto outDto) {
+    public static UserInfoResult of(UserInfoOutDto userInfoOutDto){
         return new UserInfoResult(
-                new Profile(
-                        outDto.getBio(),
-                        outDto.getPhotoUrl(),
-                        outDto.getIdentityType(),
-                        outDto.getTimezone()
-                ),
-                new Growth(
-                        outDto.getReputation(),
-                        outDto.getTotalCheckinDays(),
-                        outDto.getStreakDays()
-                )
+                userInfoOutDto.getNickname(),
+                userInfoOutDto.getReputation(),
+                userInfoOutDto.getTotalCheckinDays(),
+                userInfoOutDto.getPlusCount(),
+                userInfoOutDto.getMinusCount(),
+                userInfoOutDto.getTaskCount(),
+                IdentityType.getById(userInfoOutDto.getIdentityType()),
+                userInfoOutDto.getTimezone(),
+                userInfoOutDto.getBio(),
+                userInfoOutDto.getPhotoUrl(),
+                UserStatus.getByCode(userInfoOutDto.getStatus())
         );
     }
-
 
 }

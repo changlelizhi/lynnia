@@ -52,6 +52,11 @@
               AND check_in_date = #{today}
         )
     </select>
+    <select id="countTotalCheckInDays" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM t_checkin_log
+        WHERE user_id = #{userId}
+    </select>
 
     <insert id="insertCheckInLog" parameterType="space.changle.lynnia.repo.entity.CheckInLog">
         INSERT INTO t_checkin_log (user_id,

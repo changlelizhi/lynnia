@@ -21,10 +21,29 @@ public interface CheckInLogMapper {
      */
     int insertCheckInLog( CheckInLog checkInLog);
 
+    /**
+     * 查询用户最后一次签到时间
+     * @param userId
+     * @param today
+     * @return
+     */
     CheckInLog selectLastCheckInDate(@Param("userId") String userId, @Param("checkInDate") LocalDate today);
 
-
+    /**
+     * 查询用户当月签到天数
+     * @param userId
+     * @return
+     */
     List<LocalDate> selectMonthCheckInDays(@Param("userId")String userId);
 
+    /**
+     * 判断用户今天是否签到
+     * @param userId
+     * @param today
+     * @return
+     */
     boolean existsTodayCheckIn(@Param("userId") String userId, @Param("today") LocalDate today);
+
+    // 计算用户签到总天数
+    int countTotalCheckInDays(@Param("userId") String userId);
 }

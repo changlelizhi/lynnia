@@ -47,6 +47,11 @@
         WHERE user_id = #{userId}
     </select>
 
+    <select id="selectUserTimeZone" resultType="java.lang.String">
+    SELECT timezone
+    FROM t_user_profile
+    WHERE user_id = #{userId}
+    </select>
 
     <!-- 插入 -->
     <insert id="insertProfile" parameterType="space.changle.lynnia.repo.entity.UserProfile">
@@ -96,6 +101,21 @@
         SET reputation = reputation + #{reputation},
             update_time = #{updateTime}
         WHERE user_id = #{userId}
+    </update>
+    <update id="updateTimeZone">
+        UPDATE t_user_profile
+        SET timezone = #{timezone},
+            update_time = #{updateTime}
+        WHERE user_id = #{userId}
+
+    </update>
+    <update id="updateUserIdentity">
+        UPDATE t_user_profile
+        SET identity_type = #{identityType},
+            update_time = #{updateTime}
+        WHERE user_id = #{userId}
+
+
     </update>
 
 

@@ -93,4 +93,22 @@ public interface UserApi {
      * @param userId 用户id
      */
     void userCheckin(String userId);
+
+
+    /**
+     * 切换时区
+     *
+     * @param userId      用户id
+     * @param tmaUserId   tma用户id
+     * @param timezone    时区
+     */
+    void switchTimeZones(String userId, String tmaUserId, String timezone);
+
+    /**
+     * 刷新用户身份
+     *
+     * @param userId  用户id
+     * @param identity 身份
+     */
+    void renewIdentity(String userId, String identity);
 }

@@ -25,19 +25,29 @@ public enum Result {
 
     USER_EXIST(30001,"用户已存在,请勿重新注册"),
 
-    USER_STATUS_UNKNOWN(30002,"未知的用户状态"),
+    USER_BAN(30002,"用户被封禁"),
 
-    USER_IDENTITY_UNKNOWN(30003,"未知的身份"),
+    USER_STATUS_UNKNOWN(30003,"未知的用户状态"),
 
-    BIO_TOO_LONG(30004,"个人简介过长" ),
+    USER_IDENTITY_UNKNOWN(30004,"未知的身份"),
 
-    USER_ID_OR_CODE_EMPTY(30005,"用户id或验证码为空"),
+    USER_IDENTITY_UPDATE_FAIL(30005,"身份更新失败"),
 
-    CODE_INVALID(30006,"验证码无效"),
+    BIO_TOO_LONG(30006,"个人简介过长" ),
 
-    USER_BAN(30007,"用户被封禁"),
+    USER_SAVE_BIO_FAIL(30007,"保存简介失败"),
 
     USER_CHECKIN_TODAY(30008,"今天已签到"),
+
+    TIME_ZONE_INVALID(30009,"时区无效"),
+
+    USER_NOT_SAME(30010,"不是同一个用户"),
+
+    USER_ID_OR_CODE_EMPTY(30011,"用户id或验证码为空"),
+
+    CODE_INVALID(30012,"验证码无效"),
+
+    USER_TIME_ZONE_CHANGE_FAIL(30013,"切换时区失败"),
 
     UNAUTHORIZED(40100, "未授权"),
 

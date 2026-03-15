@@ -3,6 +3,7 @@ package space.changle.lynnia.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import space.changle.lynnia.common.constant.LynniaConstant;
 import space.changle.lynnia.common.enums.Result;
 import space.changle.lynnia.common.exception.LynniaException;
 import space.changle.lynnia.common.result.TmaUser;
+import space.changle.lynnia.common.util.JsonUtils;
 import space.changle.lynnia.common.util.UserUtils;
 import space.changle.lynnia.dto.outdto.*;
 import space.changle.lynnia.repo.entity.CheckInLog;
@@ -27,6 +29,7 @@ import space.changle.lynnia.security.auth.TelegramAuth;
 import space.changle.lynnia.service.constant.UserConstant;
 import space.changle.lynnia.api.enums.IdentityType;
 import space.changle.lynnia.api.enums.UserStatus;
+import space.changle.lynnia.service.convert.UserConvertToDTO;
 
 import java.time.*;
 import java.util.List;
@@ -108,7 +111,7 @@ public class UserService implements UserApi {
                         @Override
                         public void afterCommit() {
                             stringRedisTemplate.opsForValue().set(RedisKey.USER_STATUS_PREFIX + userId, String.valueOf(UserStatus.NORMAL.getCode()));
-                            stringRedisTemplate.opsForValue().set(RedisKey.USER_TIME_ZONE_PREFIX + userId, "Asia/Shanghai");
+
                         }
                     }
             );
@@ -123,8 +126,8 @@ public class UserService implements UserApi {
     public UserInfoOutDto queryUserInfo(String userId) {
         assertNormalUser(userId);
         UserProfile userProfile = userProfileMapper.selectByUserId(userId);
-
-        return null;
+        int totalCheckInDays = checkInLogMapper.countTotalCheckInDays(userId);
+        return UserConvertToDTO.convertToDTO(userProfile, totalCheckInDays, UserStatus.NORMAL.getCode());
     }
 
     @Override
@@ -150,18 +153,18 @@ public class UserService implements UserApi {
 
     @Override
     public void saveUserBio(String userId, String bio) {
-
-        if (isNormalUser(userId)) {
-            if (bio.length() > UserConstant.MAX_BIO_LENGTH) {
-                throw new LynniaException(Result.BIO_TOO_LONG);
-            }
-            OffsetDateTime now = OffsetDateTime.now(LynniaConstant.SYSTEM_ZONE);
-            userProfileMapper.updateBio(userId, bio, now);
+        if (bio.length() > UserConstant.MAX_BIO_LENGTH) {
+            throw new LynniaException(Result.BIO_TOO_LONG);
         }
-        if (isBanUser(userId)) {
-            throw new LynniaException(Result.USER_BAN);
+        if (StringUtils.isBlank( bio)){
+            bio="";
         }
-        throw new LynniaException(Result.USER_NOT_EXIST);
+        assertNormalUser(userId);
+        OffsetDateTime now = OffsetDateTime.now(LynniaConstant.SYSTEM_ZONE);
+        int rows = userProfileMapper.updateBio(userId, bio, now);
+        if (rows == 0) {
+            throw new LynniaException(Result.USER_SAVE_BIO_FAIL);
+        }
     }
 
     @Override
@@ -213,10 +216,26 @@ public class UserService implements UserApi {
             checkInLogMapper.insertCheckInLog(checkInLog);
             userProfileMapper.updateReputation(userId, UserConstant.SIGN_VALUE, now);
 
-        }catch (DuplicateKeyException e){
+        } catch (DuplicateKeyException e) {
             throw new LynniaException(Result.USER_CHECKIN_TODAY);
         }
 
+    }
+
+    @Override
+    public void switchTimeZones(String userId, String tmaUserId, String timezone) {
+        if (!Strings.CS.equals(userId, tmaUserId)) {
+            throw new LynniaException(Result.USER_NOT_SAME);
+        }
+        if (!isValidTimeZone(timezone)) {
+            throw new LynniaException(Result.TIME_ZONE_INVALID);
+        }
+        assertNormalUser(userId);
+        OffsetDateTime now = OffsetDateTime.now(LynniaConstant.SYSTEM_ZONE);
+        int row = userProfileMapper.updateTimeZone(userId, timezone, now);
+        if (row == 0) {
+            throw new LynniaException(Result.USER_TIME_ZONE_CHANGE_FAIL);
+        }
     }
 
     @Override
@@ -224,11 +243,9 @@ public class UserService implements UserApi {
         assertNormalUser(userId);
         LocalDate today = LocalDate.now(LynniaConstant.SYSTEM_ZONE);
         boolean existsTodayCheckIn = checkInLogMapper.existsTodayCheckIn(userId, today);
-        log.info("{} {}", userId, existsTodayCheckIn);
         List<LocalDate> localDates = checkInLogMapper.selectMonthCheckInDays(userId);
-        String timeZone = stringRedisTemplate.opsForValue().get(RedisKey.USER_TIME_ZONE_PREFIX + userId);
-        ZoneId userZone = ZoneId.of(Objects.requireNonNull(timeZone));
-        log.info("{} {} {}", timeZone,existsTodayCheckIn, userZone);
+        String userTimeZone = userProfileMapper.selectUserTimeZone(userId);
+        ZoneId userZone = ZoneId.of(userTimeZone);
         List<LocalDate> userDates = localDates.stream()
                 .map(date -> date
                         .atStartOfDay(LynniaConstant.SYSTEM_ZONE)
@@ -239,7 +256,19 @@ public class UserService implements UserApi {
         return CheckinOutDto.builder().isCheckined(existsTodayCheckIn).history(userDates).build();
     }
 
+    @Override
+    public void renewIdentity(String userId, String identity) {
+        assertNormalUser(userId);
+        log.info("identity: {}", JsonUtils.toJson( identity));
+        int identityType = IdentityType.getCodeByDesc(identity);
+        log.info("identityType: {}", identityType);
+        OffsetDateTime now = OffsetDateTime.now(LynniaConstant.SYSTEM_ZONE);
+        int rows = userProfileMapper.updateUserIdentity(userId, identityType, now);
+        if (rows == 0){
+            throw new LynniaException(Result.USER_IDENTITY_UPDATE_FAIL);
+        }
 
+    }
 
 
     private UserAccount buildUserAccount(String userId, OffsetDateTime dateTime) {

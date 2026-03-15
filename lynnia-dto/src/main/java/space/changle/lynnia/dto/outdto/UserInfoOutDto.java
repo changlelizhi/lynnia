@@ -23,6 +23,9 @@ public class UserInfoOutDto {
     // 总声望
     private int reputation;
 
+    // 总签到天数
+    private int totalCheckinDays;
+
     // 加次数
     private int plusCount;
 
@@ -32,22 +35,20 @@ public class UserInfoOutDto {
     // 发布任务次数
     private int taskCount;
 
+    // 身份
+    private int identityType;
+
+    // 时区
+    private String timezone;
+
     // 个人简介
     private String bio;
 
     // 个人头像
     private String photoUrl;
 
-    // 身份
-    private String identityType;
+    // 状态
+    private int status;
 
-    // 时区
-    private String timezone;
-
-    // 总签到天数
-    private int totalCheckinDays;
-
-    // 连续签到天数
-    private int streakDays;
 
 }

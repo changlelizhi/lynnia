@@ -17,9 +17,15 @@ public interface UserProfileMapper {
 
     UserProfile selectByUserId(String userId);
 
-    void updateBio( @Param("userId") String userId, @Param("bio") String bio,@Param("updateTime") OffsetDateTime updateTime);
+    int updateBio( @Param("userId") String userId, @Param("bio") String bio,@Param("updateTime") OffsetDateTime updateTime);
 
     int updateProfile(@Param("userId") String userId, @Param("nickname") String nickname, @Param("photoUrl") String photoUrl, @Param("updateTime") OffsetDateTime updateTime);
 
     int updateReputation (@Param("userId") String userId, @Param("reputation") int reputation, @Param("updateTime") OffsetDateTime updateTime);
+
+    int updateTimeZone(@Param("userId")String userId, @Param("timezone") String timezone,@Param("updateTime")  OffsetDateTime updateTime);
+
+    String selectUserTimeZone(@Param("userId") String userId);
+
+    int updateUserIdentity(@Param("userId")String userId, @Param("identityType") int identityType, @Param("updateTime")  OffsetDateTime updateTime);
 }
